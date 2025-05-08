@@ -78,7 +78,7 @@ const SaveAndPrint = ({ transaction, className = '' }) => {
         </div>
 
         <div style="margin: 10px 0;">
-          ${transaction.foodItems.length > 0 ? '<p>MAKANAN:</p>' : ''}
+          ${transaction.foodItems.length > 0 ? '<p>Item:</p>' : ''}
           ${transaction.foodItems.map(item => {
             const total = calculateItemTotal(item);
             const unitPrice = parsePrice(item.price);

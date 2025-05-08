@@ -229,20 +229,20 @@ const InputMenuProduk = () => {
                       }
                       className="flex-1 p-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
                     />
-                    </div>
                   </div>
-<div className="flex items-center gap-3">
+                  <div className="flex items-center gap-3">
                     <label className="text-gray-600 text-sm font-medium min-w-[100px]">
                       Harga
                     </label>
-                  <div className="flex-1 relative">
-                    <input
-                      type="text"
-                      value={item.price}
-                      onChange={(e) => handlePriceChange(e.target.value, item.id, false)}
-                      className="w-full p-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
-                      placeholder="0"
-                    />
+                    <div className="flex-1 relative">
+                      <input
+                        type="text"
+                        value={item.price}
+                        onChange={(e) => handlePriceChange(e.target.value, item.id, false)}
+                        className="w-full p-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                        placeholder="0"
+                      />
+                    </div>
                   </div>
                 </div>
               </motion.div>
