@@ -22,7 +22,7 @@ export default function TransaksiPage() {
   };
 
   const calculateTotal = (transaction) => {
-    return formatToIDR(calculateOrderTotal(transaction.foodItems, transaction.drinkItems));
+    return formatToIDR(calculateOrderTotal(transaction.foodItems));
   };
 
   return (
@@ -94,33 +94,14 @@ export default function TransaksiPage() {
                 </div>
 
                 {/* Transaction Details */}
-                <div className="grid grid-cols-1 md:grid-cols-2 divide-y md:divide-y-0 md:divide-x divide-gray-200">
-                  {/* Food Items */}
-                  <div className="p-6">
+                <div className="p-6">
+                  <div className="space-y-4">
                     <h4 className="font-medium text-gray-900 mb-4 flex items-center">
                       <span className="w-5 h-5 text-indigo-600 mr-2">🍜</span>
                       Makanan
                     </h4>
                     <ul className="space-y-3">
                       {transaction.foodItems.map((item, itemIndex) => (
-                        <li key={`${item.id}-${itemIndex}`} className="flex justify-between items-center text-sm">
-                          <span className="text-gray-600">{item.name}</span>
-                          <span className="font-medium text-gray-900">
-                            {formatToIDR(item.price)}
-                          </span>
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-
-                  {/* Drink Items */}
-                  <div className="p-6">
-                    <h4 className="font-medium text-gray-900 mb-4 flex items-center">
-                      <span className="w-5 h-5 text-indigo-600 mr-2">🥤</span>
-                      Minuman
-                    </h4>
-                    <ul className="space-y-3">
-                      {transaction.drinkItems.map((item, itemIndex) => (
                         <li key={`${item.id}-${itemIndex}`} className="flex justify-between items-center text-sm">
                           <span className="text-gray-600">{item.name}</span>
                           <span className="font-medium text-gray-900">
@@ -137,7 +118,7 @@ export default function TransaksiPage() {
                   <div className="flex justify-end gap-2">
                     <SaveAndPrint 
                       transaction={transaction} 
-                      className="text-sm px-3 py-1.5" // Added smaller padding and text size
+                      className="text-sm px-3 py-1.5"
                     />
                   </div>
                 </div>

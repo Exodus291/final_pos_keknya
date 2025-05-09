@@ -42,19 +42,13 @@ export default function EditTransaksi({ params }) {
     }).format(number).replace('IDR', 'Rp');
   };
 
-  const handlePriceChange = (value, index, isFood) => {
+  const handlePriceChange = (value, index) => {
     const numericValue = value.replace(/\D/g, '');
     const formattedPrice = formatToIDR(numericValue);
     
-    if (isFood) {
-      const newFoodItems = [...transaction.foodItems];
-      newFoodItems[index].price = formattedPrice;
-      setTransaction({ ...transaction, foodItems: newFoodItems });
-    } else {
-      const newDrinkItems = [...transaction.drinkItems];
-      newDrinkItems[index].price = formattedPrice;
-      setTransaction({ ...transaction, drinkItems: newDrinkItems });
-    }
+    const newFoodItems = [...transaction.foodItems];
+    newFoodItems[index].price = formattedPrice;
+    setTransaction({ ...transaction, foodItems: newFoodItems });
   };
 
   const addFoodItem = () => {
@@ -72,21 +66,6 @@ export default function EditTransaksi({ params }) {
     });
   };
 
-  const addDrinkItem = () => {
-    const newId = Math.max(...transaction.drinkItems.map(item => item.id)) + 1;
-    setTransaction({
-      ...transaction,
-      drinkItems: [
-        ...transaction.drinkItems,
-        {
-          id: newId,
-          name: `Minuman ${newId}`,
-          price: "Rp 0"
-        }
-      ]
-    });
-  };
-
   const removeFoodItem = (itemId) => {
     if (transaction.foodItems.length <= 1) {
       setError('Minimal harus ada 1 makanan');
@@ -95,17 +74,6 @@ export default function EditTransaksi({ params }) {
     setTransaction({
       ...transaction,
       foodItems: transaction.foodItems.filter(item => item.id !== itemId)
-    });
-  };
-
-  const removeDrinkItem = (itemId) => {
-    if (transaction.drinkItems.length <= 1) {
-      setError('Minimal harus ada 1 minuman');
-      return;
-    }
-    setTransaction({
-      ...transaction,
-      drinkItems: transaction.drinkItems.filter(item => item.id !== itemId)
     });
   };
 
@@ -179,52 +147,12 @@ export default function EditTransaksi({ params }) {
                   <input
                     type="text"
                     value={item.price}
-                    onChange={(e) => handlePriceChange(e.target.value, index, true)}
+                    onChange={(e) => handlePriceChange(e.target.value, index)}
                     className="w-32 p-2 border border-gray-200 rounded-lg"
                     placeholder="Rp 0"
                   />
                   <button
                     onClick={() => removeFoodItem(item.id)}
-                    className="text-red-500 hover:text-red-600 p-2"
-                  >
-                    ✕
-                  </button>
-                </div>
-              ))}
-            </div>
-
-            {/* Drink Items */}
-            <div>
-              <div className="flex justify-between items-center mb-4">
-                <h3 className="text-lg font-medium text-gray-900">Minuman</h3>
-                <button
-                  onClick={addDrinkItem}
-                  className="text-sm px-3 py-1 bg-blue-50 text-blue-600 rounded hover:bg-blue-100"
-                >
-                  + Tambah Minuman
-                </button>
-              </div>
-              {transaction.drinkItems.map((item, index) => (
-                <div key={item.id} className="flex gap-4 mb-4 items-center">
-                  <input
-                    type="text"
-                    value={item.name}
-                    onChange={(e) => {
-                      const newDrinkItems = [...transaction.drinkItems];
-                      newDrinkItems[index].name = e.target.value;
-                      setTransaction({ ...transaction, drinkItems: newDrinkItems });
-                    }}
-                    className="flex-1 p-2 border border-gray-200 rounded-lg"
-                  />
-                  <input
-                    type="text"
-                    value={item.price}
-                    onChange={(e) => handlePriceChange(e.target.value, index, false)}
-                    className="w-32 p-2 border border-gray-200 rounded-lg"
-                    placeholder="Rp 0"
-                  />
-                  <button
-                    onClick={() => removeDrinkItem(item.id)}
                     className="text-red-500 hover:text-red-600 p-2"
                   >
                     ✕

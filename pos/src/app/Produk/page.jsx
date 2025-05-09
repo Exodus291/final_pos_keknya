@@ -1,122 +1,106 @@
-'use client'
+"use client"
 
 import { useState, useEffect } from 'react'
+import axios from 'axios'
 
+function App() {
+  const [products, setProducts] = useState([])
+  const [search, setSearch] = useState('')
+  const [name, setName] = useState('')
+  const [price, setPrice] = useState('')
 
-export default function ProductPage() {
-    const [products, setProducts] = useState([])
-    const [name, setName] = useState('')
-    const [price, setPrice] = useState('')
-    const [editingId, setEditingId] = useState(null)
-
-    // Fetch products
-    useEffect(() => {
-        fetchProducts()
-    }, [])
-
-    const fetchProducts = async () => {
-        const response = await fetch('/api/products')
-        const data = await response.json()
-        setProducts(data)
+  const fetchProducts = async () => {
+    try {
+      const response = await axios.get(`http://localhost:3001/api/products${search ? `?search=${search}` : ''}`)
+      setProducts(response.data)
+    } catch (error) {
+      console.error('Error fetching products:', error)
     }
+  }
 
-    // Create or update product
-    const handleSubmit = async (e) => {
-        e.preventDefault()
-        
-        if (editingId) {
-            // Update
-            await fetch(`/api/products/${editingId}`, {
-                method: 'PUT',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ name, price: parseFloat(price) })
-            })
-        } else {
-            // Create
-            await fetch('/api/products', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ name, price: parseFloat(price) })
-            })
-        }
-
-        // Reset form and refresh products
-        setName('')
-        setPrice('')
-        setEditingId(null)
-        fetchProducts()
+  const handleSubmit = async (e) => {
+    e.preventDefault()
+    try {
+      await axios.post('http://localhost:3001/api/products', {
+        name,
+        price: parseFloat(price)
+      })
+      setName('')
+      setPrice('')
+      fetchProducts()
+    } catch (error) {
+      console.error('Error creating product:', error)
     }
+  }
 
-    // Delete product
-    const handleDelete = async (id) => {
-        await fetch(`/api/products/${id}`, {
-            method: 'DELETE'
-        })
-        fetchProducts()
+  const handleDelete = async (id) => {
+    try {
+      await axios.delete(`http://localhost:3001/api/products/${id}`)
+      fetchProducts()
+    } catch (error) {
+      console.error('Error deleting product:', error)
     }
+  }
 
-    // Set up edit mode
-    const handleEdit = (product) => {
-        setEditingId(product.id)
-        setName(product.name)
-        setPrice(product.price.toString())
-    }
+  useEffect(() => {
+    fetchProducts()
+  }, [search])
 
-    return (
-        <div className="p-8">
-            <h1 className="text-2xl font-bold mb-6">Manajemen Produk</h1>
+  return (
+    <div className="container mx-auto px-4 py-8">
+      <h1 className="text-3xl font-bold text-center text-gray-800 mb-8">Product Management</h1>
+      
+      <div className="mb-6">
+        <input
+          type="text"
+          placeholder="Search products..."
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+        />
+      </div>
 
-            <form onSubmit={handleSubmit} className="mb-8">
-                <div className="flex gap-4 mb-4">
-                    <input
-                        type="text"
-                        value={name}
-                        onChange={(e) => setName(e.target.value)}
-                        placeholder="Nama Produk"
-                        className="border p-2 rounded"
-                        required
-                    />
-                    <input
-                        type="number"
-                        value={price}
-                        onChange={(e) => setPrice(e.target.value)}
-                        placeholder="Harga"
-                        className="border p-2 rounded"
-                        required
-                    />
-                    <button 
-                        type="submit"
-                        className="bg-blue-500 text-white px-4 py-2 rounded"
-                    >
-                        {editingId ? 'Update' : 'Tambah'} Produk
-                    </button>
-                </div>
-            </form>
+      <form onSubmit={handleSubmit} className="flex gap-4 mb-8">
+        <input
+          type="text"
+          placeholder="Product name"
+          value={name}
+          onChange={(e) => setName(e.target.value)}
+          required
+          className="flex-1 p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+        />
+        <input
+          type="number"
+          placeholder="Price"
+          value={price}
+          onChange={(e) => setPrice(e.target.value)}
+          required
+          className="flex-1 p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+        />
+        <button 
+          type="submit"
+          className="px-6 py-3 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
+        >
+          Add Product
+        </button>
+      </form>
 
-            <div className="grid gap-4">
-                {products.map((product) => (
-                    <div key={product.id} className="border p-4 rounded flex justify-between items-center">
-                        <div>
-                            <h3 className="font-bold">{product.name}</h3>
-                            <p>Rp {product.price.toLocaleString()}</p>
-                        </div>
-                        <div className="flex gap-2">
-                            <button
-                                onClick={() => handleEdit(product)}
-                                className="bg-yellow-500 text-white px-3 py-1 rounded"
-                            >
-                                Edit
-                            </button>
-                            <button
-                                onClick={() => handleDelete(product.id)}
-                                className="bg-red-500 text-white px-3 py-1 rounded"
-                            >
-                                Hapus
-                            </button>
-                        </div>
-                    </div>
-                ))}
-            </div>
-        </div>
-    )
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        {products.map((product) => (
+          <div key={product.id} className="bg-white rounded-lg shadow-md p-6">
+            <h3 className="text-xl font-semibold text-gray-800 mb-2">{product.name}</h3>
+            <p className="text-gray-600 mb-4">Rp {product.price.toLocaleString()}</p>
+            <button 
+              onClick={() => handleDelete(product.id)}
+              className="w-full px-4 py-2 bg-red-600 text-white font-medium rounded-lg hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500"
+            >
+              Delete
+            </button>
+          </div>
+        ))}
+      </div>
+    </div>
+  )
 }
+
+export default App

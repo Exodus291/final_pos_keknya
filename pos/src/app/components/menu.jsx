@@ -4,6 +4,7 @@ import { motion } from "framer-motion";
 import { useState, useEffect } from "react";
 import { useRouter } from 'next/navigation';
 import NamaDanWaktu from './NamaDanWaktu';
+import SearchProduk from './cariProduk';
 
 const InputMenuProduk = () => {
   const router = useRouter();
@@ -12,18 +13,25 @@ const InputMenuProduk = () => {
   const [foodItems, setFoodItems] = useState([
     { 
       id: 1,
-      name: "Seblak 1", 
+      name: "", 
       price: "Rp 0" 
     }
   ]);
-  const [drinkItems, setDrinkItems] = useState([
-    {
-      id: 1,
-      name: "Minuman 1",
-      price: "Rp 0"
-    }
-  ]);
-
+  const handleSelectProduk = (product, itemId) => {
+    setFoodItems((prev) =>
+      prev.map((item) =>
+        item.id === itemId
+          ? {
+              ...item,
+              name: product.name,
+              // Only update price if it wasn't manually set
+              price: item.isManualPrice ? item.price : product.price,
+              produkId: product.id
+            }
+          : item
+      )
+    );
+  };
   // Handle mounting
   useEffect(() => {
     setMounted(true);
@@ -34,10 +42,9 @@ const InputMenuProduk = () => {
     if (mounted) {
       const savedState = localStorage.getItem('currentOrder');
       if (savedState) {
-        const { customerName: savedName, foodItems: savedFood, drinkItems: savedDrink } = JSON.parse(savedState);
+        const { customerName: savedName, foodItems: savedFood } = JSON.parse(savedState);
         setCustomerName(savedName || '');
         setFoodItems(savedFood || foodItems);
-        setDrinkItems(savedDrink || drinkItems);
       }
     }
   }, [mounted]);
@@ -48,10 +55,9 @@ const InputMenuProduk = () => {
       localStorage.setItem('currentOrder', JSON.stringify({
         customerName,
         foodItems,
-        drinkItems
       }));
     }
-  }, [mounted, customerName, foodItems, drinkItems]);
+  }, [mounted, customerName, foodItems]);
 
   const formatToIDR = (value) => {
     if (!value || value === 'Rp 0') return 'Rp 0';
@@ -64,63 +70,71 @@ const InputMenuProduk = () => {
     }).format(number).replace('IDR', 'Rp');
   };
 
-  const handlePriceChange = (value, id, isFood) => {
+  const handlePriceChange = (value, id) => {
+    // Remove non-numeric characters and format
     const numericValue = value.replace(/\D/g, '');
     const formattedPrice = formatToIDR(numericValue);
     
-    if (isFood) {
-      setFoodItems(foodItems.map(item => 
-        item.id === id ? { ...item, price: formattedPrice } : item
-      ));
-    } else {
-      setDrinkItems(drinkItems.map(item => 
-        item.id === id ? { ...item, price: formattedPrice } : item
-      ));
-    }
+    setFoodItems(foodItems.map(item => 
+      item.id === id ? { 
+        ...item, 
+        price: formattedPrice,
+        isManualPrice: true // Flag to indicate manual price entry
+      } : item
+    ));
   };
 
   const calculateTotal = () => {
     const foodTotal = foodItems.reduce((sum, item) => 
       sum + parseInt(item.price.replace(/\D/g, '') || 0), 0);
-    const drinkTotal = drinkItems.reduce((sum, item) => 
-      sum + parseInt(item.price.replace(/\D/g, '') || 0), 0);
-    return formatToIDR(String(foodTotal + drinkTotal));
+    return formatToIDR(String(foodTotal));
+  };
+
+  const handleDelete = (idToDelete) => {
+    setFoodItems(prev => {
+      const filtered = prev.filter(item => item.id !== idToDelete);
+      // Re-number remaining items to prevent ID gaps
+      return filtered.map((item, index) => ({
+        ...item,
+        id: index + 1
+      }));
+    });
   };
 
   const addMakanan = () => {
-    const newId = foodItems.length + 1;
+    const nextId = foodItems.length > 0 
+      ? Math.max(...foodItems.map(item => item.id)) + 1 
+      : 1;
+      
     setFoodItems([
       ...foodItems,
       {
-        id: newId,
-        name: `Seblak ${newId}`,
-        price: "Rp 0",
-      },
-    ]);
-  };
-
-  const addMinuman = () => {
-    const newId = drinkItems.length + 1;
-    setDrinkItems([
-      ...drinkItems,
-      {
-        id: newId,
-        name: `Minuman ${newId}`,
+        id: nextId,
+        name: ``,
         price: "Rp 0",
       },
     ]);
   };
 
   const handleSave = () => {
+    // Filter out foodItems with empty name
+    const filteredFoodItems = foodItems.filter(item => item.name && item.name.trim() !== '');
+    if (filteredFoodItems.length === 0) {
+      alert('Tidak ada menu yang diisi. Silakan tambahkan minimal satu menu.');
+      return;
+    }
     const transaction = {
       id: Date.now(),
       customerName,
       date: new Date().toISOString(),
-      foodItems,
-      drinkItems,
-      total: calculateTotal()
+      foodItems: filteredFoodItems,
+      total: formatToIDR(
+        String(
+          filteredFoodItems.reduce((sum, item) => sum + parseInt(item.price.replace(/\D/g, '') || 0), 0)
+        )
+      )
     };
-
+    console.log('Transaction:', transaction);
     const savedTransactions = JSON.parse(localStorage.getItem('transactions') || '[]');
     localStorage.setItem('transactions', JSON.stringify([transaction, ...savedTransactions]));
     localStorage.removeItem('currentOrder');
@@ -135,8 +149,7 @@ const InputMenuProduk = () => {
     <div className="space-y-6 p-6 bg-gray-50 min-h-screen">
       <NamaDanWaktu onNameChange={setCustomerName} />
       
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-6xl mx-auto">
-        {/* Kolom Makanan */}
+      <div className="max-w-2xl mx-auto">
         <div className="space-y-4">
           <h2 className="text-xl font-semibold text-gray-800 flex items-center">
             <span className="w-8 h-8 bg-indigo-100 rounded-lg flex items-center justify-center mr-3">
@@ -157,18 +170,20 @@ const InputMenuProduk = () => {
                     <label className="text-gray-600 text-sm font-medium min-w-[100px]">
                       Nama Menu
                     </label>
-                    <input
-                      type="text"
-                      value={item.name}
-                      onChange={(e) =>
-                        setFoodItems(
-                          foodItems.map((m) =>
-                            m.id === item.id ? { ...m, name: e.target.value } : m
-                          )
-                        )
-                      }
-                      className="flex-1 p-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
-                    />
+                    <div className="flex-1 flex items-center gap-2">
+                      <SearchProduk
+                        initialValue={item.name}
+                        onSelect={(product) => handleSelectProduk(product, item.id)}
+                      />
+                      <button 
+                        onClick={() => handleDelete(item.id)}
+                        className="p-2 text-red-500 hover:bg-red-50 rounded-lg transition-colors"
+                      >
+                        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                          <path fillRule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clipRule="evenodd" />
+                        </svg>
+                      </button>
+                    </div>
                   </div>
                   <div className="flex items-center gap-3">
                     <label className="text-gray-600 text-sm font-medium min-w-[100px]">
@@ -178,9 +193,9 @@ const InputMenuProduk = () => {
                       <input
                         type="text"
                         value={item.price}
-                        onChange={(e) => handlePriceChange(e.target.value, item.id, true)}
+                        onChange={(e) => handlePriceChange(e.target.value, item.id)}
                         className="w-full p-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
-                        placeholder="0"
+                        placeholder="Rp 0"
                       />
                     </div>
                   </div>
@@ -195,70 +210,10 @@ const InputMenuProduk = () => {
             + Tambah Makanan
           </button>
         </div>
-
-        {/* Kolom Minuman */}
-        <div className="space-y-4">
-          <h2 className="text-xl font-semibold text-gray-800 flex items-center">
-            <span className="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center mr-3">
-              🥤
-            </span>
-            Minuman
-          </h2>
-          <div className="space-y-4">
-            {drinkItems.map((item) => (
-              <motion.div
-                key={`drink-${item.id}`}
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                className="bg-white p-4 rounded-lg shadow-sm border border-gray-100"
-              >
-                <div className="space-y-3">
-                  <div className="flex items-center gap-3">
-                    <label className="text-gray-600 text-sm font-medium min-w-[100px]">
-                      Nama Menu
-                    </label>
-                    <input
-                      type="text"
-                      value={item.name}
-                      onChange={(e) =>
-                        setDrinkItems(
-                          drinkItems.map((m) =>
-                            m.id === item.id ? { ...m, name: e.target.value } : m
-                          )
-                        )
-                      }
-                      className="flex-1 p-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
-                    />
-                  </div>
-                  <div className="flex items-center gap-3">
-                    <label className="text-gray-600 text-sm font-medium min-w-[100px]">
-                      Harga
-                    </label>
-                    <div className="flex-1 relative">
-                      <input
-                        type="text"
-                        value={item.price}
-                        onChange={(e) => handlePriceChange(e.target.value, item.id, false)}
-                        className="w-full p-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
-                        placeholder="0"
-                      />
-                    </div>
-                  </div>
-                </div>
-              </motion.div>
-            ))}
-          </div>
-          <button
-            onClick={addMinuman}
-            className="w-full p-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors duration-200"
-          >
-            + Tambah Minuman
-          </button>
-        </div>
       </div>
 
       {/* Total and Save Button */}
-      <div className="max-w-6xl mx-auto space-y-4">
+      <div className="max-w-2xl mx-auto space-y-4">
         <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-100">
           <div className="flex justify-between items-center">
             <span className="text-lg font-medium text-gray-600">Total:</span>
