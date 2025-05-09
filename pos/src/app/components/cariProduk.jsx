@@ -6,7 +6,6 @@ const ProductSearch = ({ onSelect, initialValue = '' }) => {
   const [loading, setLoading] = useState(false);
   const [isOpen, setIsOpen] = useState(false);
   const [selectedIndex, setSelectedIndex] = useState(-1);
-  const [isSelected, setIsSelected] = useState(false);
   const dropdownRef = useRef(null);
 
   const formatToIDR = (value) => {
@@ -32,7 +31,6 @@ const ProductSearch = ({ onSelect, initialValue = '' }) => {
   }, []);
 
   const searchProducts = async () => {
-    if (isSelected) return; // Don't search if item is already selected
     setLoading(true);
     try {
       const response = await fetch(`http://localhost:3001/api/menu?search=${encodeURIComponent(search)}`);
@@ -59,23 +57,14 @@ const ProductSearch = ({ onSelect, initialValue = '' }) => {
   }, [search]);
 
   const handleSelectProduct = (product) => {
-    setSearch(product.nama);
+    setSearch(''); // Reset search input
     setIsOpen(false);
-    setIsSelected(true);
     onSelect && onSelect({
       id: product.id,
       name: product.nama,
       price: product.harga,
       displayPrice: formatToIDR(product.harga)
     });
-  };
-
-  const handleInputChange = (e) => {
-    const value = e.target.value;
-    setSearch(value);
-    if (isSelected) {
-      setIsSelected(false); // Reset selection when user types
-    }
   };
 
   const handleKeyDown = (e) => {
@@ -117,10 +106,10 @@ const ProductSearch = ({ onSelect, initialValue = '' }) => {
         <input
           type="text"
           value={search}
-          onChange={handleInputChange}
-          onKeyDown={handleKeyDown}
+          onChange={(e) => setSearch(e.target.value)}
           placeholder="Cari produk..."
           className="w-full p-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+          onKeyDown={handleKeyDown}
         />
         {loading && (
           <div className="absolute right-3 top-1/2 -translate-y-1/2">
