@@ -22,7 +22,6 @@ const InputMenuProduk = () => {
   const [selectedMenus, setSelectedMenus] = useState([]);
 
   const handleSelectProduk = (product) => {
-    // Check if item already exists
     const existingItem = selectedMenus.find(item => item.name === product.name);
     if (existingItem) {
       alert('Menu ini sudah ditambahkan');
@@ -30,10 +29,11 @@ const InputMenuProduk = () => {
     }
 
     setSelectedMenus([...selectedMenus, {
-      id: Date.now(),
+      id: product.id, // Use the actual menu ID from database
       name: product.name,
-      price: product.price,
-      displayPrice: formatToIDR(String(product.price))
+      price: Number(product.price),
+      displayPrice: formatToIDR(String(product.price)),
+      quantity: 1
     }]);
     
     // Reset the input
@@ -117,26 +117,56 @@ const InputMenuProduk = () => {
   };
 
   // Update the handleSave function
-  const handleSave = () => {
+  const handleSave = async () => {
     if (selectedMenus.length === 0) {
       alert('Tidak ada menu yang dipilih. Silakan pilih minimal satu menu.');
       return;
     }
-
-    const transaction = {
-      id: Date.now(),
-      customerName,
-      date: new Date().toISOString(),
-      foodItems: selectedMenus,
-      total: calculateTotal().numericTotal,
-      displayTotal: calculateTotal().displayTotal
-    };
-
-    console.log('Transaction:', transaction);
-    const savedTransactions = JSON.parse(localStorage.getItem('transactions') || '[]');
-    localStorage.setItem('transactions', JSON.stringify([transaction, ...savedTransactions]));
-    localStorage.removeItem('currentOrder');
-    router.push('/transaksi');
+  
+    try {
+      // Format the transaction data to match backend controller
+      const transaction = {
+        customerName: customerName || 'Guest',
+        date: new Date().toISOString(),
+        total: calculateTotal().numericTotal,
+        foodItems: selectedMenus.map(item => ({
+          id: item.id,          // This is menuId in the database
+          name: item.name,
+          price: Number(item.price),
+          quantity: Number(item.quantity || 1)
+        }))
+      };
+  
+      console.log('Sending transaction:', transaction);
+  
+      const response = await fetch('http://localhost:3001/api/transactions', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(transaction)
+      });
+  
+      if (!response.ok) {
+        const errorData = await response.json();
+        console.error('Server error details:', errorData);
+        throw new Error(errorData.error || `HTTP error! status: ${response.status}`);
+      }
+  
+      const responseData = await response.json();
+      console.log('Transaction saved successfully:', responseData);
+  
+      // Reset states after successful save
+      setSelectedMenus([]);
+      setCustomerName('');
+      localStorage.removeItem('currentOrder');
+      
+      alert('Transaksi berhasil disimpan!');
+      router.push('/transaksi');
+    } catch (error) {
+      console.error('Transaction error:', error);
+      alert(`Gagal menyimpan transaksi: ${error.message}`);
+    }
   };
 
   const handleDelete = (idToDelete) => {

@@ -5,14 +5,29 @@ import { motion } from 'framer-motion';
 import Link from 'next/link';
 import SaveAndPrint from '../components/SaveAndPrint';
 import { formatToIDR } from '../utils/formatIdr';
-import { calculateOrderTotal } from '../utils/priceUtils';
 
 export default function TransaksiPage() {
   const [transactions, setTransactions] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState(null);
 
   useEffect(() => {
-    const savedTransactions = JSON.parse(localStorage.getItem('transactions') || '[]');
-    setTransactions(savedTransactions);
+    const fetchTransactions = async () => {
+      try {
+        const response = await fetch('http://localhost:3001/api/transactions');
+        if (!response.ok) {
+          throw new Error('Failed to fetch transactions');
+        }
+        const data = await response.json();
+        setTransactions(data);
+      } catch (err) {
+        setError(err.message);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchTransactions();
   }, []);
 
   const calculateSubtotal = (items) => {
@@ -21,9 +36,32 @@ export default function TransaksiPage() {
     );
   };
 
-  const calculateTotal = (transaction) => {
-    return formatToIDR(calculateOrderTotal(transaction.foodItems));
-  };
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600 mx-auto"></div>
+          <p className="mt-4 text-gray-600">Loading transactions...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center text-red-600">
+          <p>Error: {error}</p>
+          <button 
+            onClick={() => window.location.reload()} 
+            className="mt-4 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700"
+          >
+            Retry
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -87,7 +125,7 @@ export default function TransaksiPage() {
                     <div className="text-right">
                       <p className="text-xs text-gray-500 mb-1">Total Pembayaran</p>
                       <p className="text-xl font-bold text-indigo-600">
-                        {calculateTotal(transaction)}
+                        {formatToIDR(transaction.total)}
                       </p>
                     </div>
                   </div>
@@ -101,7 +139,7 @@ export default function TransaksiPage() {
                       Makanan
                     </h4>
                     <ul className="space-y-3">
-                      {transaction.foodItems.map((item, itemIndex) => (
+                      {transaction.foodItems && transaction.foodItems.map((item, itemIndex) => (
                         <li key={`${item.id}-${itemIndex}`} className="flex justify-between items-center text-sm">
                           <span className="text-gray-600">{item.name}</span>
                           <span className="font-medium text-gray-900">
