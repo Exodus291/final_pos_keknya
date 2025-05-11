@@ -38,7 +38,7 @@ const NavBar = () => {
     { title: "Home", href: "/" },
     { title: "Transaksi", href: "/transaksi" },
     { title: "Produk", href: "/Produk" },
-    { title: "Laporan", href: "/reports" },
+    { title: "Laporan", href: "/laporan" },
   ];
 
   const menuVariants = {
