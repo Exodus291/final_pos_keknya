@@ -2,15 +2,36 @@
 
 import { motion, AnimatePresence } from "framer-motion";
 import Link from "next/link";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 
 const NavBar = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [mounted, setMounted] = useState(false);
   const [activeItem, setActiveItem] = useState(null);
+  const menuRef = useRef(null); // Ref untuk menu mobile
+  const buttonRef = useRef(null); // Ref untuk tombol hamburger menu
 
   useEffect(() => {
     setMounted(true);
+
+    // Fungsi untuk menutup menu jika klik di luar navbar
+    const handleClickOutside = (event) => {
+      // Cek jika klik di luar menu dan tombol hamburger
+      if (
+        menuRef.current && !menuRef.current.contains(event.target) &&
+        buttonRef.current && !buttonRef.current.contains(event.target)
+      ) {
+        setIsOpen(false); // Menutup navbar jika klik di luar
+      }
+    };
+
+    // Tambahkan event listener saat komponen mount
+    document.addEventListener("click", handleClickOutside);
+
+    // Bersihkan event listener saat komponen unmount
+    return () => {
+      document.removeEventListener("click", handleClickOutside);
+    };
   }, []);
 
   const menuItems = [
@@ -28,8 +49,8 @@ const NavBar = () => {
         duration: 0.3,
         ease: "easeOut",
         staggerChildren: 0.1,
-        when: "beforeChildren"
-      }
+        when: "beforeChildren",
+      },
     },
     closed: {
       opacity: 0,
@@ -39,9 +60,9 @@ const NavBar = () => {
         ease: "easeIn",
         staggerChildren: 0.05,
         staggerDirection: -1,
-        when: "afterChildren"
-      }
-    }
+        when: "afterChildren",
+      },
+    },
   };
 
   const itemVariants = {
@@ -50,17 +71,17 @@ const NavBar = () => {
       x: 0,
       transition: {
         duration: 0.3,
-        ease: "easeOut"
-      }
+        ease: "easeOut",
+      },
     },
     closed: {
       opacity: 0,
       x: -20,
       transition: {
         duration: 0.3,
-        ease: "easeIn"
-      }
-    }
+        ease: "easeIn",
+      },
+    },
   };
 
   if (!mounted) return null;
@@ -94,15 +115,15 @@ const NavBar = () => {
                   >
                     {item.title}
                   </Link>
-                  <motion.div 
+                  <motion.div
                     className="absolute bottom-0 left-0 right-0 h-0.5 bg-gradient-to-r from-violet-600 to-indigo-600"
                     initial={{ scaleX: 0, originX: 0 }}
-                    animate={{ 
-                      scaleX: activeItem === item.title ? 1 : 0
+                    animate={{
+                      scaleX: activeItem === item.title ? 1 : 0,
                     }}
-                    transition={{ 
+                    transition={{
                       duration: 0.2,
-                      ease: "easeInOut"
+                      ease: "easeInOut",
                     }}
                   />
                 </motion.div>
@@ -112,6 +133,7 @@ const NavBar = () => {
             {/* Mobile Menu Button */}
             <div className="flex items-center md:hidden">
               <button
+                ref={buttonRef} // Menambahkan ref pada tombol hamburger
                 onClick={() => setIsOpen(!isOpen)}
                 className="inline-flex items-center justify-center p-2 rounded-lg text-gray-600"
               >
@@ -126,10 +148,11 @@ const NavBar = () => {
           </div>
         </div>
 
-        {/* Mobile Menu - Updated with animations */}
+        {/* Mobile Menu */}
         <AnimatePresence>
           {isOpen && (
             <motion.div
+              ref={menuRef} // Menambahkan ref pada menu mobile
               initial="closed"
               animate="open"
               exit="closed"
@@ -146,7 +169,7 @@ const NavBar = () => {
                     <Link
                       href={item.href}
                       className="block px-4 py-3 text-base font-medium text-gray-600 hover:text-indigo-600 transition-colors duration-200"
-                      onClick={() => setIsOpen(false)}
+                      onClick={() => setIsOpen(false)} // Menutup navbar saat item diklik
                     >
                       <div className="flex items-center justify-between">
                         <span>{item.title}</span>

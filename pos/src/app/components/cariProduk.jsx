@@ -83,8 +83,10 @@ const ProductSearch = ({ onSelect, initialValue = '' }) => {
         break;
       case 'Enter':
         e.preventDefault();
-        if (selectedIndex >= 0 && products[selectedIndex]) {
-          handleSelectProduct(products[selectedIndex]);
+        if (products.length > 0) {
+          // If no item is selected, use the first item
+          const productToSelect = selectedIndex >= 0 ? products[selectedIndex] : products[0];
+          handleSelectProduct(productToSelect);
         }
         break;
       case 'Escape':
@@ -93,6 +95,13 @@ const ProductSearch = ({ onSelect, initialValue = '' }) => {
         break;
     }
   };
+
+  // Auto-select first item when products load
+  useEffect(() => {
+    if (products.length > 0) {
+      setSelectedIndex(0); // Always select first item when products change
+    }
+  }, [products]);
 
   // Reset selected index when search changes
   useEffect(() => {
@@ -108,6 +117,7 @@ const ProductSearch = ({ onSelect, initialValue = '' }) => {
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           placeholder="Cari produk..."
+          data-menu-search
           className="w-full p-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
           onKeyDown={handleKeyDown}
         />

@@ -1,183 +1,192 @@
-'use client';
+'use client'
 
-import { useState, useEffect, use } from 'react';
-import { useRouter } from 'next/navigation';
-import { motion } from 'framer-motion';
+import { useEffect, useState } from 'react'
+import { useParams, useRouter } from 'next/navigation'
+import { motion, AnimatePresence } from 'framer-motion'
 
-export default function EditTransaksi({ params }) {
-  const router = useRouter();
-  const resolvedParams = use(params);
-  const { id } = resolvedParams;
-  const [transaction, setTransaction] = useState(null);
-  const [error, setError] = useState('');
+export default function EditTransactionPage() {
+  const { id } = useParams()
+  const router = useRouter()
+
+  const [loading, setLoading] = useState(true)
+  const [formData, setFormData] = useState({
+    customerName: '',
+    date: '',
+    total: 0,
+    foodItems: [],
+  })
+  const [isSubmitting, setIsSubmitting] = useState(false)
 
   useEffect(() => {
-    const savedTransactions = JSON.parse(localStorage.getItem('transactions') || '[]');
-    const found = savedTransactions.find(t => t.id.toString() === id);
-    if (found) {
-      setTransaction(found);
-    } else {
-      router.push('/transaksi');
+    if (!id) return
+    fetch(`http://localhost:3001/api/transactions/${id}`)
+      .then(res => res.json())
+      .then(data => {
+        setFormData({
+          customerName: data.customerName,
+          date: data.date,
+          total: data.total,
+          foodItems: data.foodItems.map(item => ({
+            menuId: item.menuId,
+            name: item.name,
+            price: item.price,
+            quantity: item.quantity
+          })),
+        })
+        setLoading(false)
+      })
+      .catch(err => {
+        console.error('Gagal ambil data transaksi:', err)
+        setLoading(false)
+      })
+  }, [id])
+
+  const handleChange = (e) => {
+    setFormData({ ...formData, [e.target.name]: e.target.value })
+  }
+
+const handleFoodItemChange = (index, value) => {
+  const quantity = Number(value)
+  let updatedItems = [...formData.foodItems]
+
+  if (quantity <= 0 || isNaN(quantity)) {
+    // Hapus item kalau qty kosong/0
+    updatedItems.splice(index, 1)
+  } else {
+    updatedItems[index].quantity = quantity
+  }
+
+  const total = updatedItems.reduce((acc, item) => acc + item.price * item.quantity, 0)
+  setFormData({ ...formData, foodItems: updatedItems, total })
+}
+
+  const handleDeleteItem = (index) => {
+    const updatedItems = [...formData.foodItems]
+    updatedItems.splice(index, 1)
+    const total = updatedItems.reduce((acc, item) => acc + item.price * item.quantity, 0)
+    setFormData({ ...formData, foodItems: updatedItems, total })
+  }
+
+  const handleSubmit = async () => {
+    setIsSubmitting(true)
+    try {
+      await fetch(`http://localhost:3001/api/transactions/${id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(formData)
+      })
+      router.push('/transaksi')
+    } catch (error) {
+      console.error('Gagal update transaksi:', error)
+    } finally {
+      setIsSubmitting(false)
     }
-  }, [id, router]);
+  }
 
-  const handleSave = () => {
-    const savedTransactions = JSON.parse(localStorage.getItem('transactions') || '[]');
-    const updatedTransactions = savedTransactions.map(t => 
-      t.id.toString() === id ? transaction : t
-    );
-    
-    localStorage.setItem('transactions', JSON.stringify(updatedTransactions));
-    router.push('/transaksi');
-  };
-
-  const formatToIDR = (value) => {
-    if (!value || value === 'Rp 0') return 'Rp 0';
-    const number = parseInt(value.replace(/\D/g, ''));
-    return new Intl.NumberFormat('id-ID', {
-      style: 'currency',
-      currency: 'IDR',
-      minimumFractionDigits: 0,
-      maximumFractionDigits: 0
-    }).format(number).replace('IDR', 'Rp');
-  };
-
-  const handlePriceChange = (value, index) => {
-    const numericValue = value.replace(/\D/g, '');
-    const formattedPrice = formatToIDR(numericValue);
-    
-    const newFoodItems = [...transaction.foodItems];
-    newFoodItems[index].price = formattedPrice;
-    setTransaction({ ...transaction, foodItems: newFoodItems });
-  };
-
-  const addFoodItem = () => {
-    const newId = Math.max(...transaction.foodItems.map(item => item.id)) + 1;
-    setTransaction({
-      ...transaction,
-      foodItems: [
-        ...transaction.foodItems,
-        {
-          id: newId,
-          name: `Seblak ${newId}`,
-          price: "Rp 0"
-        }
-      ]
-    });
-  };
-
-  const removeFoodItem = (itemId) => {
-    if (transaction.foodItems.length <= 1) {
-      setError('Minimal harus ada 1 makanan');
-      return;
-    }
-    setTransaction({
-      ...transaction,
-      foodItems: transaction.foodItems.filter(item => item.id !== itemId)
-    });
-  };
-
-  // Clear error after 3 seconds
-  useEffect(() => {
-    if (error) {
-      const timer = setTimeout(() => setError(''), 3000);
-      return () => clearTimeout(timer);
-    }
-  }, [error]);
-
-  if (!transaction) return null;
+  if (loading) {
+    return (
+      <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center">
+        <div className="text-white text-lg">Memuat...</div>
+      </div>
+    )
+  }
 
   return (
-    <div className="min-h-screen bg-gray-50/50 backdrop-blur-sm fixed inset-0 flex items-center justify-center">
-      <motion.div 
-        initial={{ opacity: 0, scale: 0.95 }}
-        animate={{ opacity: 1, scale: 1 }}
-        className="bg-white rounded-xl shadow-lg max-w-3xl w-full mx-4 overflow-hidden relative"
-      >
-        {/* Error Toast */}
-        {error && (
-          <motion.div 
-            initial={{ opacity: 0, y: -20 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="absolute top-4 left-1/2 transform -translate-x-1/2 bg-red-100 border border-red-200 text-red-600 px-4 py-2 rounded-lg"
+    <AnimatePresence>
+      <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 px-4">
+        <motion.div
+          initial={{ opacity: 0, y: 40 }}
+          animate={{ opacity: 1, y: 0 }}
+          exit={{ opacity: 0, y: 40 }}
+          transition={{ duration: 0.3 }}
+          className="relative bg-white w-full max-w-3xl rounded-2xl shadow-lg p-6 overflow-y-auto max-h-[90vh]"
+        >
+          {/* Close Button */}
+          <button
+            onClick={() => router.push('/transaksi')}
+            className="absolute top-4 right-4 text-gray-500 hover:text-gray-700 text-2xl"
+            aria-label="Tutup"
           >
-            {error}
-          </motion.div>
-        )}
+            ×
+          </button>
 
-        <div className="p-6 border-b border-gray-200">
-          <div className="flex justify-between items-center">
-            <h2 className="text-xl font-semibold text-gray-800">
-              Edit Transaksi #{id.slice(-6)}
-            </h2>
-            <button
-              onClick={() => router.push('/transaksi')}
-              className="text-gray-400 hover:text-gray-500"
-            >
-              ✕
-            </button>
-          </div>
-        </div>
+          {/* Title */}
+          <h2 className="text-2xl font-bold text-gray-800 mb-6">Edit Transaksi</h2>
 
-        <div className="p-6">
+          {/* Form */}
           <div className="space-y-6">
-            {/* Food Items */}
+            {/* Customer Name */}
             <div>
-              <div className="flex justify-between items-center mb-4">
-                <h3 className="text-lg font-medium text-gray-900">Makanan</h3>
-                <button
-                  onClick={addFoodItem}
-                  className="text-sm px-3 py-1 bg-indigo-50 text-indigo-600 rounded hover:bg-indigo-100"
-                >
-                  + Tambah Makanan
-                </button>
-              </div>
-              {transaction.foodItems.map((item, index) => (
-                <div key={item.id} className="flex gap-4 mb-4 items-center">
-                  <input
-                    type="text"
-                    value={item.name}
-                    onChange={(e) => {
-                      const newFoodItems = [...transaction.foodItems];
-                      newFoodItems[index].name = e.target.value;
-                      setTransaction({ ...transaction, foodItems: newFoodItems });
-                    }}
-                    className="flex-1 p-2 border border-gray-200 rounded-lg"
-                  />
-                  <input
-                    type="text"
-                    value={item.price}
-                    onChange={(e) => handlePriceChange(e.target.value, index)}
-                    className="w-32 p-2 border border-gray-200 rounded-lg"
-                    placeholder="Rp 0"
-                  />
-                  <button
-                    onClick={() => removeFoodItem(item.id)}
-                    className="text-red-500 hover:text-red-600 p-2"
-                  >
-                    ✕
-                  </button>
+              <label className="block text-sm font-medium text-gray-700">Nama Pelanggan</label>
+              <input
+                type="text"
+                name="customerName"
+                value={formData.customerName}
+                onChange={handleChange}
+                className="mt-1 w-full p-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
+              />
+            </div>
+
+            {/* Total */}
+            <div className="text-lg font-semibold text-gray-700">
+              Total: Rp{formData.total.toLocaleString()}
+            </div>
+
+            {/* Items */}
+            <div className="space-y-4">
+              <h3 className="text-lg font-semibold text-gray-900 mb-2">Item Makanan</h3>
+              {formData.foodItems.map((item, index) => (
+                <div key={index} className="grid grid-cols-4 gap-4 items-end">
+                  <div>
+                    <label className="text-sm font-medium text-gray-700">Nama</label>
+                    <input
+                      type="text"
+                      value={item.name}
+                      readOnly
+                      className="mt-1 w-full p-2 rounded-md bg-gray-100 border"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-sm font-medium text-gray-700">Harga</label>
+                    <input
+                      type="number"
+                      value={item.price}
+                      readOnly
+                      className="mt-1 w-full p-2 rounded-md bg-gray-100 border"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-sm font-medium text-gray-700">Qty</label>
+                    <input
+                      type="number"
+                      value={item.quantity}
+                      onChange={(e) => handleFoodItemChange(index, e.target.value)}
+                      className="mt-1 w-full p-2 border rounded-md"
+                    />
+                  </div>
+                  <div>
+                    <button
+                      onClick={() => handleDeleteItem(index)}
+                      className="text-red-600 hover:text-red-800 text-sm mt-6"
+                    >
+                      Hapus
+                    </button>
+                  </div>
                 </div>
               ))}
             </div>
-          </div>
-        </div>
 
-        <div className="p-6 border-t border-gray-200 flex justify-end gap-4">
-          <button
-            onClick={() => router.push('/transaksi')}
-            className="px-4 py-2 text-gray-700 hover:text-gray-900"
-          >
-            Batal
-          </button>
-          <button
-            onClick={handleSave}
-            className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700"
-          >
-            Simpan Perubahan
-          </button>
-        </div>
-      </motion.div>
-    </div>
-  );
+            {/* Submit Button */}
+            <button
+              onClick={handleSubmit}
+              disabled={isSubmitting}
+              className="w-full bg-indigo-600 hover:bg-indigo-700 text-white py-3 rounded-md text-lg font-semibold disabled:bg-gray-400"
+            >
+              {isSubmitting ? 'Menyimpan...' : 'Simpan Perubahan'}
+            </button>
+          </div>
+        </motion.div>
+      </div>
+    </AnimatePresence>
+  )
 }

@@ -19,7 +19,11 @@ export default function TransaksiPage() {
           throw new Error('Failed to fetch transactions');
         }
         const data = await response.json();
-        setTransactions(data);
+        // Sort transactions by date in descending order (newest first)
+        const sortedData = data.sort((a, b) => 
+          new Date(b.date).getTime() - new Date(a.date).getTime()
+        );
+        setTransactions(sortedData);
       } catch (err) {
         setError(err.message);
       } finally {
@@ -141,7 +145,9 @@ export default function TransaksiPage() {
                     <ul className="space-y-3">
                       {transaction.foodItems && transaction.foodItems.map((item, itemIndex) => (
                         <li key={`${item.id}-${itemIndex}`} className="flex justify-between items-center text-sm">
-                          <span className="text-gray-600">{item.name}</span>
+                          <span className="text-gray-600">
+                            {item.name} x{item.quantity || 1} {/* Menampilkan kuantitas */}
+                          </span>
                           <span className="font-medium text-gray-900">
                             {formatToIDR(item.price)}
                           </span>

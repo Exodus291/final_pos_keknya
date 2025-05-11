@@ -1,12 +1,13 @@
 "use client";
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { motion } from 'framer-motion';
 
 const NamaDanWaktu = ({ onNameChange }) => {
   const [currentTime, setCurrentTime] = useState(new Date());
   const [nama, setNama] = useState('');
   const [mounted, setMounted] = useState(false);
+  const menuSearchRef = useRef(null);
 
   useEffect(() => {
     setMounted(true);
@@ -42,6 +43,16 @@ const NamaDanWaktu = ({ onNameChange }) => {
     onNameChange(newName);
   };
 
+  const handleKeyDown = (e) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      const menuSearchInput = document.querySelector('[data-menu-search]');
+      if (menuSearchInput) {
+        menuSearchInput.focus();
+      }
+    }
+  };
+
   return (
     <div className="max-w-6xl mx-auto mb-6">
       <motion.div
@@ -60,6 +71,7 @@ const NamaDanWaktu = ({ onNameChange }) => {
                 type="text"
                 value={nama}
                 onChange={handleNameChange}
+                onKeyDown={handleKeyDown}
                 className="w-full px-4 py-2 rounded-lg border border-gray-200 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 outline-none transition-all duration-200"
                 placeholder="Masukkan nama pelanggan"
               />

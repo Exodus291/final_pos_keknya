@@ -10,6 +10,7 @@ import SelectedMenu from './selectedMenu';
 const InputMenuProduk = () => {
   const router = useRouter();
   const [mounted, setMounted] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
   const [customerName, setCustomerName] = useState('');
   const [foodItems, setFoodItems] = useState([
     { 
@@ -20,6 +21,7 @@ const InputMenuProduk = () => {
     }
   ]);
   const [selectedMenus, setSelectedMenus] = useState([]);
+  const [showSuccess, setShowSuccess] = useState(false);
 
   const handleSelectProduk = (product) => {
     const existingItem = selectedMenus.find(item => item.name === product.name);
@@ -88,20 +90,20 @@ const InputMenuProduk = () => {
   };
 
   // Update the handlePriceChange function
-  const handlePriceChange = (value, id) => {
-    // Convert to number immediately
-    const numericValue = parseInt(value.replace(/\D/g, '') || 0);
-    const formattedPrice = formatToIDR(String(numericValue));
+  // const handlePriceChange = (value, id) => {
+  //   // Convert to number immediately
+  //   const numericValue = parseInt(value.replace(/\D/g, '') || 0);
+  //   const formattedPrice = formatToIDR(String(numericValue));
     
-    setFoodItems(foodItems.map(item => 
-      item.id === id ? { 
-        ...item, 
-        price: numericValue, // Store as number
-        displayPrice: formattedPrice, // Store formatted string separately
-        isManualPrice: true
-      } : item
-    ));
-  };
+  //   setFoodItems(foodItems.map(item => 
+  //     item.id === id ? { 
+  //       ...item, 
+  //       price: numericValue, // Store as number
+  //       displayPrice: formattedPrice, // Store formatted string separately
+  //       isManualPrice: true
+  //     } : item
+  //   ));
+  // };
 
   // Update the calculateTotal function
   const calculateTotal = () => {
@@ -122,7 +124,8 @@ const InputMenuProduk = () => {
       alert('Tidak ada menu yang dipilih. Silakan pilih minimal satu menu.');
       return;
     }
-  
+
+    setIsSaving(true);
     try {
       // Format the transaction data to match backend controller
       const transaction = {
@@ -136,65 +139,73 @@ const InputMenuProduk = () => {
           quantity: Number(item.quantity || 1)
         }))
       };
-  
+
       console.log('Sending transaction:', transaction);
-  
-      const response = await fetch('http://localhost:3001/api/transactions', {
+
+      const response = await fetch('http://localhost:3001/api/transactions/create', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify(transaction)
       });
-  
+
       if (!response.ok) {
         const errorData = await response.json();
         console.error('Server error details:', errorData);
         throw new Error(errorData.error || `HTTP error! status: ${response.status}`);
       }
-  
+
       const responseData = await response.json();
       console.log('Transaction saved successfully:', responseData);
-  
+
+      // Show success animation
+      setShowSuccess(true);
+      
       // Reset states after successful save
       setSelectedMenus([]);
       setCustomerName('');
       localStorage.removeItem('currentOrder');
       
-      alert('Transaksi berhasil disimpan!');
-      router.push('/transaksi');
+      // Wait for animation before redirecting
+      setTimeout(() => {
+        router.push('/transaksi');
+      }, 1500);
+
     } catch (error) {
       console.error('Transaction error:', error);
       alert(`Gagal menyimpan transaksi: ${error.message}`);
+    } finally {
+      setIsSaving(false);
     }
   };
 
-  const handleDelete = (idToDelete) => {
-    setFoodItems(prev => {
-      const filtered = prev.filter(item => item.id !== idToDelete);
-      // Re-number remaining items to prevent ID gaps
-      return filtered.map((item, index) => ({
-        ...item,
-        id: index + 1
-      }));
-    });
-  };
+  // const handleDelete = (idToDelete) => {
+  //   setFoodItems(prev => {
+  //     const filtered = prev.filter(item => item.id !== idToDelete);
+  //     // Re-number remaining items to prevent ID gaps
+  //     return filtered.map((item, index) => ({
+  //       ...item,
+  //       id: index + 1
+  //     }));
+  //   });
+  // };
 
-  const addMakanan = () => {
-    const nextId = foodItems.length > 0 
-      ? Math.max(...foodItems.map(item => item.id)) + 1 
-      : 1;
+  // const addMakanan = () => {
+  //   const nextId = foodItems.length > 0 
+  //     ? Math.max(...foodItems.map(item => item.id)) + 1 
+  //     : 1;
       
-    setFoodItems([
-      ...foodItems,
-      {
-        id: nextId,
-        name: ``,
-        price: 0, // Store as number
-        displayPrice: "Rp 0" // Store formatted string
-      },
-    ]);
-  };
+  //   setFoodItems([
+  //     ...foodItems,
+  //     {
+  //       id: nextId,
+  //       name: ``,
+  //       price: 0, // Store as number
+  //       displayPrice: "Rp 0" // Store formatted string
+  //     },
+  //   ]);
+  // };
 
   const handleUpdateQuantity = (itemId, newQuantity) => {
     if (newQuantity < 1) return;
@@ -218,6 +229,34 @@ const InputMenuProduk = () => {
 
   return (
     <div className="space-y-6 p-6 bg-gray-50 min-h-screen">
+      {/* Success Overlay */}
+      {showSuccess && (
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          className="fixed inset-0 bg-green-50/90 backdrop-blur-sm z-50 flex items-center justify-center"
+        >
+          <motion.div
+            initial={{ scale: 0 }}
+            animate={{ scale: 1 }}
+            className="bg-white rounded-2xl p-6 shadow-lg flex flex-col items-center"
+          >
+            <motion.div
+              initial={{ scale: 0 }}
+              animate={{ scale: 1 }}
+              transition={{ delay: 0.2 }}
+              className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mb-4"
+            >
+              <svg className="w-10 h-10 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
+              </svg>
+            </motion.div>
+            <h3 className="text-lg font-medium text-gray-900">Transaksi Berhasil!</h3>
+            <p className="text-sm text-gray-500 mt-1">Mengalihkan ke halaman transaksi...</p>
+          </motion.div>
+        </motion.div>
+      )}
+      
       <NamaDanWaktu onNameChange={setCustomerName} />
       
       <div className="max-w-2xl mx-auto">
@@ -252,24 +291,36 @@ const InputMenuProduk = () => {
         </div>
         
         <motion.button
-          whileHover={{ scale: 1.01 }}
-          whileTap={{ scale: 0.99 }}
+          whileHover={{ scale: isSaving ? 1 : 1.01 }}
+          whileTap={{ scale: isSaving ? 1 : 0.99 }}
           onClick={handleSave}
-          className="w-full p-4 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors duration-200 flex items-center justify-center gap-2 font-medium"
+          disabled={isSaving}
+          className={`w-full p-4 ${
+            isSaving ? 'bg-green-400 cursor-not-allowed' : 'bg-green-600 hover:bg-green-700'
+          } text-white rounded-lg transition-colors duration-200 flex items-center justify-center gap-2 font-medium`}
         >
-          <svg 
-            xmlns="http://www.w3.org/2000/svg" 
-            className="h-5 w-5" 
-            viewBox="0 0 20 20" 
-            fill="currentColor"
-          >
-            <path 
-              fillRule="evenodd" 
-              d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" 
-              clipRule="evenodd" 
-            />
-          </svg>
-          Simpan Transaksi
+          {isSaving ? (
+            <>
+              <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
+              <span>Menyimpan...</span>
+            </>
+          ) : (
+            <>
+              <svg 
+                xmlns="http://www.w3.org/2000/svg" 
+                className="h-5 w-5" 
+                viewBox="0 0 20 20" 
+                fill="currentColor"
+              >
+                <path 
+                  fillRule="evenodd" 
+                  d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" 
+                  clipRule="evenodd" 
+                />
+              </svg>
+              Simpan Transaksi
+            </>
+          )}
         </motion.button>
       </div>
     </div>
