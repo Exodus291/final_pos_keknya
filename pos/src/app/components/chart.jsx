@@ -14,7 +14,6 @@ import {
 } from 'recharts';
 import { formatToIDR } from '../utils/formatIdr';
 
-// ... existing imports ...
 
 const Chart = ({ data }) => {
   return (

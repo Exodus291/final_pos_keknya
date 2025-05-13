@@ -18,7 +18,7 @@ const Laporan = () => {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const response = await fetch('http://localhost:3001/api/transactions/');
+        const response = await fetch('http://localhost:3001/api/transactions/final');
         const data = await response.json();
         
         if (data && Array.isArray(data)) {

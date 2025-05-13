@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation';
 import NamaDanWaktu from './NamaDanWaktu';
 import SearchProduk from './cariProduk';
 import SelectedMenu from './selectedMenu';
+import { formatToIDR } from "../utils/formatIdr";
 
 const InputMenuProduk = () => {
   const router = useRouter();
@@ -78,33 +79,6 @@ const InputMenuProduk = () => {
     }
   }, [mounted, customerName, foodItems]);
 
-  const formatToIDR = (value) => {
-    if (!value || value === 'Rp 0') return 'Rp 0';
-    const number = parseInt(value.replace(/\D/g, ''));
-    return new Intl.NumberFormat('id-ID', {
-      style: 'currency',
-      currency: 'IDR',
-      minimumFractionDigits: 0,
-      maximumFractionDigits: 0
-    }).format(number).replace('IDR', 'Rp');
-  };
-
-  // Update the handlePriceChange function
-  // const handlePriceChange = (value, id) => {
-  //   // Convert to number immediately
-  //   const numericValue = parseInt(value.replace(/\D/g, '') || 0);
-  //   const formattedPrice = formatToIDR(String(numericValue));
-    
-  //   setFoodItems(foodItems.map(item => 
-  //     item.id === id ? { 
-  //       ...item, 
-  //       price: numericValue, // Store as number
-  //       displayPrice: formattedPrice, // Store formatted string separately
-  //       isManualPrice: true
-  //     } : item
-  //   ));
-  // };
-
   // Update the calculateTotal function
   const calculateTotal = () => {
     const total = selectedMenus.reduce((sum, item) => {
@@ -139,10 +113,9 @@ const InputMenuProduk = () => {
           quantity: Number(item.quantity || 1)
         }))
       };
-
-      console.log('Sending transaction:', transaction);
-
-      const response = await fetch('http://localhost:3001/api/transactions/create', {
+      console.log('Sending transaction data:', transaction);
+      
+      const response = await fetch('http://localhost:3001/api/transactions/pending', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -179,33 +152,6 @@ const InputMenuProduk = () => {
       setIsSaving(false);
     }
   };
-
-  // const handleDelete = (idToDelete) => {
-  //   setFoodItems(prev => {
-  //     const filtered = prev.filter(item => item.id !== idToDelete);
-  //     // Re-number remaining items to prevent ID gaps
-  //     return filtered.map((item, index) => ({
-  //       ...item,
-  //       id: index + 1
-  //     }));
-  //   });
-  // };
-
-  // const addMakanan = () => {
-  //   const nextId = foodItems.length > 0 
-  //     ? Math.max(...foodItems.map(item => item.id)) + 1 
-  //     : 1;
-      
-  //   setFoodItems([
-  //     ...foodItems,
-  //     {
-  //       id: nextId,
-  //       name: ``,
-  //       price: 0, // Store as number
-  //       displayPrice: "Rp 0" // Store formatted string
-  //     },
-  //   ]);
-  // };
 
   const handleUpdateQuantity = (itemId, newQuantity) => {
     if (newQuantity < 1) return;

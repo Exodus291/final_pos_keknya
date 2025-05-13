@@ -1,5 +1,6 @@
 'use client';
 
+import { useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { useRouter } from 'next/navigation';
 import { formatToIDR } from '../utils/formatIdr';
@@ -10,11 +11,20 @@ const SaveAndPrint = ({ transaction, className = '' }) => {
 
   const handleSaveAndPrint = async () => {
     try {
-      // Save to localStorage first
-      const savedTransactions = JSON.parse(localStorage.getItem('transactions') || '[]');
-      localStorage.setItem('transactions', JSON.stringify([transaction, ...savedTransactions]));
-      localStorage.removeItem('currentOrder');
+      // Kirim data transaksi ke backend menggunakan PATCH
+      const response = await fetch(`http://localhost:3001/api/transactions/${transaction.id}/final`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(transaction),
+      });
 
+      if (!response.ok) {
+        throw new Error('Failed to save transaction');
+      }
+
+      
       // Create print content
       const printContent = getPrintContent(transaction);
 
@@ -81,7 +91,6 @@ const SaveAndPrint = ({ transaction, className = '' }) => {
           ${transaction.foodItems.length > 0 ? '<p>Item:</p>' : ''}
           ${transaction.foodItems.map(item => {
             const total = calculateItemTotal(item);
-            const unitPrice = parsePrice(item.price);
             return `
               <div style="display: flex; justify-content: space-between; margin: 10px 0;">
                 <span style="width: 30%">${item.name}</span>
@@ -91,10 +100,8 @@ const SaveAndPrint = ({ transaction, className = '' }) => {
             `;
           }).join('')}
           
-         
           ${transaction.drinkItems.map(item => {
             const total = calculateItemTotal(item);
-            const unitPrice = parsePrice(item.price);
             return `
               <div style="display: flex; justify-content: space-between; margin: 10px 0;">
                 <span style="width: 30%">${item.name}</span>

@@ -1,4 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { formatToIDR } from '../utils/formatIdr';
+
+
 
 const ProductSearch = ({ onSelect, initialValue = '' }) => {
   const [search, setSearch] = useState(initialValue);
@@ -7,17 +10,6 @@ const ProductSearch = ({ onSelect, initialValue = '' }) => {
   const [isOpen, setIsOpen] = useState(false);
   const [selectedIndex, setSelectedIndex] = useState(-1);
   const dropdownRef = useRef(null);
-
-  const formatToIDR = (value) => {
-    const number = parseInt(value, 10);
-    if (isNaN(number)) return 'Rp 0';
-    return new Intl.NumberFormat('id-ID', {
-      style: 'currency',
-      currency: 'IDR',
-      minimumFractionDigits: 0,
-      maximumFractionDigits: 0
-    }).format(number).replace('IDR', 'Rp');
-  };
 
   useEffect(() => {
     const handleClickOutside = (event) => {
