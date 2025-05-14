@@ -65,13 +65,13 @@ export default function FinalTransactionsPage() {
       <div className="bg-white border-b border-gray-200">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
           <div className="flex justify-between items-center">
-            <h1 className="text-2xl font-bold text-gray-900">Transaksi Final</h1>
+            <h1 className="text-1xl font-bold text-gray-900">Transaksi Final</h1>
             <div className="flex gap-2">
               <Link
                 href="/transaksi"
                 className="px-4 py-2 bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300 transition-colors duration-200"
               >
-                Kembali ke Transaksi Pending
+                Transaksi Pending
               </Link>
               <Link
                 href="/"

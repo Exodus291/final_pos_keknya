@@ -13,6 +13,12 @@ const SaveAndPrint = ({ transaction, className = '', onFinalized, onPrint }) => 
     setLoading(true);
     const printWindow = window.open('', '_blank');
 
+    if (!printWindow) {
+      alert('Popup printer diblokir oleh browser.');
+      setLoading(false);
+      return;
+    }
+
     try {
       const response = await fetch(`http://localhost:3001/api/transactions/${transaction.id}/final`, {
         method: 'PATCH',
@@ -24,17 +30,16 @@ const SaveAndPrint = ({ transaction, className = '', onFinalized, onPrint }) => 
         throw new Error(`HTTP error! status: ${response.status}`);
       }
 
-      const trx = await response.json();
+      const result = await response.json();;
+      const trx = result.data;
+      console.log('RESPON TRX:', trx);
 
-      // Kirim ke daftar print
       if (onPrint) onPrint(trx);
-
-      // Hapus dari daftar transaksi aktif
       if (onFinalized) onFinalized(transaction.id);
 
       const printContent = getPrintContent(trx);
 
-      printWindow.document.write(`
+      const html = `
         <html>
           <head>
             <title>Print Receipt</title>
@@ -48,19 +53,14 @@ const SaveAndPrint = ({ transaction, className = '', onFinalized, onPrint }) => 
               .item-row span { display: inline-block; }
             </style>
           </head>
-          <body>
+          <body onload="window.print(); window.onafterprint = function() { window.close(); }">
             ${printContent}
-            <script>
-              window.onload = function() {
-                window.print();
-                window.onafterprint = function() {
-                  window.close();
-                }
-              }
-            </script>
           </body>
         </html>
-      `);
+      `;
+
+      printWindow.document.open();
+      printWindow.document.write(html);
       printWindow.document.close();
 
       router.refresh();
@@ -73,11 +73,14 @@ const SaveAndPrint = ({ transaction, className = '', onFinalized, onPrint }) => 
     }
   };
 
+  const calculateItemTotal = (item) => Number(item.price) * Number(item.quantity || 1);
+
+  const calculateOrderTotal = (foodItems) =>
+    foodItems.reduce((sum, item) => sum + calculateItemTotal(item), 0);
+
   const getPrintContent = (trx) => {
     const foodItems = trx.foodItems || [];
     const grandTotal = calculateOrderTotal(foodItems);
-    const orderId = trx.id ? trx.id.toString().slice(-6).padStart(6, '0') : 'Unknown';
-    const createdAt = trx.createdAt ? new Date(trx.createdAt).toLocaleString('id-ID') : new Date().toLocaleString('id-ID');
 
     return `
       <div class="wrapper">
@@ -88,30 +91,26 @@ const SaveAndPrint = ({ transaction, className = '', onFinalized, onPrint }) => 
         </div>
 
         <div class="line">
-          <p>Tanggal: ${createdAt}</p>
-          <p>Order #: ${orderId}</p>
-          ${trx.customerName ? `<p>Pelanggan: ${trx.customerName}</p>` : ''}
+          <p>Date: ${new Date(trx.date).toLocaleString('id-ID')}</p>
+          <p>Order #: ${trx.id.toString().slice(-6).padStart(6, '0')}</p>
+          ${trx.customerName ? `<p>Customer: ${trx.customerName}</p>` : ''}
         </div>
 
-        <div>
-          ${foodItems.length ? '<p>Items:</p>' : '<p><em>Tidak ada item.</em></p>'}
-          ${foodItems.map(item => {
-            const qty = item.quantity ?? 1;
-            const total = calculateItemTotal(item);
-            return `
-              <div class="item-row">
-                <span style="width: 30%">${item.name}</span>
-                <span style="width: 15%">x${qty}</span>
-                <span style="width: 20%; text-align: right;">${formatToIDR(item.price)}</span>
-                <span style="width: 35%; text-align: right;">${formatToIDR(total)}</span>
-              </div>
-            `;
-          }).join('')}
-        </div>
+        ${foodItems.length > 0 ? '<p>Item:</p>' : ''}
+        ${foodItems.map(item => {
+          const total = calculateItemTotal(item);
+          return `
+            <div class="item-row">
+              <span style="width: 30%">${item.name}</span>
+              <span style="width: 15%">x${item.quantity || 1}</span>
+              <span style="width: 35%; text-align: right;">${formatToIDR(total)}</span>
+            </div>
+          `;
+        }).join('')}
 
         <div class="line">
-          <div class="item-row" style="font-weight: bold;">
-            <span>Total</span>
+          <div style="display: flex; justify-content: space-between; font-weight: bold;">
+            <span>TOTAL</span>
             <span>${formatToIDR(grandTotal)}</span>
           </div>
         </div>
@@ -122,15 +121,6 @@ const SaveAndPrint = ({ transaction, className = '', onFinalized, onPrint }) => 
         </div>
       </div>
     `;
-  };
-
-  const calculateItemTotal = (item) => {
-    const qty = item.quantity ?? 1;
-    return item.price * qty;
-  };
-
-  const calculateOrderTotal = (items) => {
-    return items.reduce((acc, item) => acc + calculateItemTotal(item), 0);
   };
 
   return (
