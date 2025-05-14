@@ -1,50 +1,51 @@
 'use client';
 
-import { useEffect } from 'react';
-import { motion } from 'framer-motion';
+import { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { motion } from 'framer-motion';
 import { formatToIDR } from '../utils/formatIdr';
-import { parsePrice, calculateItemTotal, calculateOrderTotal } from '../utils/priceUtils';
 
-const SaveAndPrint = ({ transaction, className = '' }) => {
+const SaveAndPrint = ({ transaction, className = '', onFinalized, onPrint }) => {
   const router = useRouter();
+  const [loading, setLoading] = useState(false);
 
   const handleSaveAndPrint = async () => {
+    setLoading(true);
+    const printWindow = window.open('', '_blank');
+
     try {
-      // Kirim data transaksi ke backend menggunakan PATCH
       const response = await fetch(`http://localhost:3001/api/transactions/${transaction.id}/final`, {
         method: 'PATCH',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(transaction),
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({})
       });
 
       if (!response.ok) {
-        throw new Error('Failed to save transaction');
+        throw new Error(`HTTP error! status: ${response.status}`);
       }
 
-      
-      // Create print content
-      const printContent = getPrintContent(transaction);
+      const trx = await response.json();
 
-      // Create a new window for printing
-      const printWindow = window.open('', '_blank');
+      // Kirim ke daftar print
+      if (onPrint) onPrint(trx);
+
+      // Hapus dari daftar transaksi aktif
+      if (onFinalized) onFinalized(transaction.id);
+
+      const printContent = getPrintContent(trx);
+
       printWindow.document.write(`
         <html>
           <head>
             <title>Print Receipt</title>
             <style>
-              @page {
-                size: 58mm auto;
-                margin: 0;
-              }
-              @media print {
-                body {
-                  margin: 0;
-                  padding: 0;
-                }
-              }
+              @page { size: 58mm auto; margin: 0; }
+              body { margin: 0; padding: 0; font-family: monospace; font-size: 12px; }
+              .wrapper { width: 58mm; padding: 5mm; }
+              .center { text-align: center; }
+              .line { border-top: 1px dashed #000; margin: 10px 0; padding-top: 10px; }
+              .item-row { display: flex; justify-content: space-between; margin: 4px 0; }
+              .item-row span { display: inline-block; }
             </style>
           </head>
           <body>
@@ -62,69 +63,74 @@ const SaveAndPrint = ({ transaction, className = '' }) => {
       `);
       printWindow.document.close();
 
-      // Navigate to transactions page after printing
-      router.push('/transaksi');
+      router.refresh();
     } catch (error) {
-      console.error('Error saving and printing:', error);
-      alert('Terjadi kesalahan saat menyimpan dan mencetak');
+      console.error('Error:', error);
+      alert(error.message || 'Terjadi kesalahan saat menyimpan atau mencetak transaksi.');
+      printWindow?.close();
+    } finally {
+      setLoading(false);
     }
   };
 
-  const getPrintContent = (transaction) => {
-    const grandTotal = calculateOrderTotal(transaction.foodItems, transaction.drinkItems);
+  const getPrintContent = (trx) => {
+    const foodItems = trx.foodItems || [];
+    const grandTotal = calculateOrderTotal(foodItems);
+    const orderId = trx.id ? trx.id.toString().slice(-6).padStart(6, '0') : 'Unknown';
+    const createdAt = trx.createdAt ? new Date(trx.createdAt).toLocaleString('id-ID') : new Date().toLocaleString('id-ID');
 
     return `
-      <div style="width: 58mm; padding: 5mm; font-family: monospace; font-size: 12px;">
-        <div style="text-align: center; margin-bottom: 10px;">
+      <div class="wrapper">
+        <div class="center">
           <h2 style="margin: 0;">WARUNG SEBLAK</h2>
           <p style="margin: 5px 0;">Jl. Example Street No. 123</p>
           <p style="margin: 5px 0;">Tel: (123) 456-7890</p>
         </div>
-        
-        <div style="border-top: 1px dashed #000; border-bottom: 1px dashed #000; padding: 5px 0; margin: 10px 0;">
-          <p>Date: ${new Date().toLocaleString('id-ID')}</p>
-          <p>Order #: ${transaction.id.toString().slice(-6)}</p>
-          ${transaction.customerName ? `<p>Customer: ${transaction.customerName}</p>` : ''}
+
+        <div class="line">
+          <p>Tanggal: ${createdAt}</p>
+          <p>Order #: ${orderId}</p>
+          ${trx.customerName ? `<p>Pelanggan: ${trx.customerName}</p>` : ''}
         </div>
 
-        <div style="margin: 10px 0;">
-          ${transaction.foodItems.length > 0 ? '<p>Item:</p>' : ''}
-          ${transaction.foodItems.map(item => {
+        <div>
+          ${foodItems.length ? '<p>Items:</p>' : '<p><em>Tidak ada item.</em></p>'}
+          ${foodItems.map(item => {
+            const qty = item.quantity ?? 1;
             const total = calculateItemTotal(item);
             return `
-              <div style="display: flex; justify-content: space-between; margin: 10px 0;">
+              <div class="item-row">
                 <span style="width: 30%">${item.name}</span>
-                <span style="width: 15%; text-align: left;">x${item.quantity || 1}</span>
-                <span style="width: 35%; text-align: right;">${formatToIDR(total)}</span>
-              </div>
-            `;
-          }).join('')}
-          
-          ${transaction.drinkItems.map(item => {
-            const total = calculateItemTotal(item);
-            return `
-              <div style="display: flex; justify-content: space-between; margin: 10px 0;">
-                <span style="width: 30%">${item.name}</span>
-                <span style="width: 15%; text-align: left;">x${item.quantity || 1}</span>
+                <span style="width: 15%">x${qty}</span>
+                <span style="width: 20%; text-align: right;">${formatToIDR(item.price)}</span>
                 <span style="width: 35%; text-align: right;">${formatToIDR(total)}</span>
               </div>
             `;
           }).join('')}
         </div>
 
-        <div style="border-top: 1px dashed #000; padding-top: 10px; margin-top: 10px;">
-          <div style="display: flex; justify-content: space-between; font-weight: bold;">
-            <span>TOTAL</span>
+        <div class="line">
+          <div class="item-row" style="font-weight: bold;">
+            <span>Total</span>
             <span>${formatToIDR(grandTotal)}</span>
           </div>
         </div>
 
-        <div style="text-align: center; margin-top: 20px;">
+        <div class="center" style="margin-top: 20px;">
           <p>Terima kasih atas kunjungan Anda!</p>
-          <p>Silahkan datang kembali</p>
+          <p>Silakan datang kembali</p>
         </div>
       </div>
     `;
+  };
+
+  const calculateItemTotal = (item) => {
+    const qty = item.quantity ?? 1;
+    return item.price * qty;
+  };
+
+  const calculateOrderTotal = (items) => {
+    return items.reduce((acc, item) => acc + calculateItemTotal(item), 0);
   };
 
   return (
@@ -133,16 +139,23 @@ const SaveAndPrint = ({ transaction, className = '' }) => {
       whileTap={{ scale: 0.99 }}
       onClick={handleSaveAndPrint}
       className={`w-full p-4 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors duration-200 flex items-center justify-center gap-2 font-medium ${className}`}
+      disabled={loading}
     >
-      <svg 
-        xmlns="http://www.w3.org/2000/svg" 
-        className="h-5 w-5" 
-        viewBox="0 0 20 20" 
-        fill="currentColor"
-      >
-        <path d="M5 4v3H4a2 2 0 00-2 2v3a2 2 0 002 2h1v2a2 2 0 002 2h6a2 2 0 002-2v-2h1a2 2 0 002-2V9a2 2 0 00-2-2h-1V4a2 2 0 00-2-2H7a2 2 0 00-2 2zm8 0v3H7V4h6zm0 8v4H7v-4h6z" />
-      </svg>
-      Simpan & Cetak
+      {loading ? (
+        <span>Memproses...</span>
+      ) : (
+        <>
+          <svg 
+            xmlns="http://www.w3.org/2000/svg" 
+            className="h-5 w-5" 
+            viewBox="0 0 20 20" 
+            fill="currentColor"
+          >
+            <path d="M5 4v3H4a2 2 0 00-2 2v3a2 2 0 002 2h1v2a2 2 0 002 2h6a2 2 0 002-2v-2h1a2 2 0 002-2V9a2 2 0 00-2-2h-1V4a2 2 0 00-2-2H7a2 2 0 00-2 2zm8 0v3H7V4h6zm0 8v4H7v-4h6z" />
+          </svg>
+          Simpan & Cetak
+        </>
+      )}
     </motion.button>
   );
 };
