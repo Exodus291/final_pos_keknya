@@ -103,20 +103,10 @@ const menuCounts = data.reduce((acc, transaction) => {
         <motion.div className="flex items-center justify-between mb-8">
           <motion.h1 className="text-3xl font-bold text-gray-900 flex items-center gap-3">
             📈 Laporan Penjualan
-            <Dialog>
-              <DialogTrigger className="text-blue-600 hover:text-blue-700">ℹ️</DialogTrigger>
-              <DialogContent className="p-6 bg-white rounded-lg shadow-xl">
-                <h3 className="text-lg font-semibold mb-4">Informasi Laporan</h3>
-                <p className="text-gray-600">Laporan ini menampilkan statistik penjualan harian, mingguan, dan bulanan.</p>
-              </DialogContent>
-            </Dialog>
           </motion.h1>
-          <Avatar className="w-10 h-10 rounded-full bg-blue-500 text-white flex items-center justify-center">
-            AD
-          </Avatar>
         </motion.div>
 
-        <motion.div whileHover={{ scale: 1.02 }} className="bg-white p-4 rounded-xl shadow-sm">
+        <motion.div  className="bg-white p-4 rounded-xl shadow-sm">
           <DropdownMenu>
             <DropdownMenuTrigger className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors">
               Filter Periode: {filterPeriode}
@@ -150,18 +140,6 @@ const menuCounts = data.reduce((acc, transaction) => {
             <motion.div className="bg-white p-6 rounded-xl shadow-sm">
               <h3 className="text-gray-500 text-sm mb-2">Total Pelanggan</h3>
               <div className="text-3xl font-bold text-blue-600">{totalPelanggan}</div>
-            </motion.div>
-
-            <motion.div className="bg-white p-6 rounded-xl shadow-sm">
-              <h3 className="text-gray-500 text-sm mb-4">🔥 Menu Terlaris</h3>
-              <div className="space-y-3">
-                {menuTerlaris.map((menu, index) => (
-                  <div key={index} className="flex justify-between items-center px-3 py-2 bg-gray-50 rounded-lg">
-                    <span className="text-gray-700">{menu.nama}</span>
-                    <span className="font-semibold text-red-600">{menu.jumlah}x</span>
-                  </div>
-                ))}
-              </div>
             </motion.div>
           </motion.div>
         </AnimatePresence>

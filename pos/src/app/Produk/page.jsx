@@ -9,14 +9,18 @@ function App() {
   const [name, setName] = useState('')
   const [price, setPrice] = useState('')
 
-  const fetchProducts = async () => {
-    try {
-      const response = await axios.get(`http://localhost:3001/api/menu${search ? `?search=${search}` : ''}`)
-      setProducts(response.data)
-    } catch (error) {
-      console.error('Error fetching products:', error)
-    }
+const fetchProducts = async () => {
+  try {
+    const response = await axios.get(
+      `http://localhost:3001/api/menu${search ? `?search=${search}` : ''}`
+    );
+    // Filter menu yang status-nya "active"
+    const activeProducts = response.data.filter(product => product.status === 'active');
+    setProducts(activeProducts);
+  } catch (error) {
+    console.error('Error fetching products:', error);
   }
+}
 
   const handleSubmit = async (e) => {
     e.preventDefault()
@@ -38,15 +42,16 @@ function App() {
     }
   }
 
-  const handleDelete = async (id) => {
-    try {
-      await axios.delete(`http://localhost:3001/api/menu/${id}`)
-      fetchProducts()
-    } catch (error) {
-      console.error('Error deleting product:', error)
+    const handleDelete = async (id) => {
+      console.log('Deleting product with ID:', id)
+        try {
+            await axios.delete(`http://localhost:3001/api/menu/${id}`)
+            fetchProducts()
+        } catch (error) {
+            console.error('Error deleting product:', error.response?.data || error.message)
+            alert('Failed to delete product. Please check the console for details.')
+        }
     }
-  }
-
   useEffect(() => {
     fetchProducts()
   }, [search])

@@ -37,7 +37,7 @@ const Chart = ({ data }) => {
         fontWeight: 600,
         letterSpacing: '0.5px'
       }}>
-        📊 Visualisasi Penjualan
+        📊 Penjualan
       </h3>
       
       <ResponsiveContainer>
