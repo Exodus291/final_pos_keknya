@@ -96,17 +96,19 @@ const SaveAndPrint = ({ transaction, className = '', onFinalized, onPrint }) => 
           ${trx.customerName ? `<p>Customer: ${trx.customerName}</p>` : ''}
         </div>
 
+        <div class="line">
         ${foodItems.length > 0 ? '<p>Item:</p>' : ''}
         ${foodItems.map(item => {
           const total = calculateItemTotal(item);
           return `
-            <div class="item-row">
-              <span style="width: 30%">${item.name}</span>
-              <span style="width: 15%">x${item.quantity || 1}</span>
-              <span style="width: 35%; text-align: right;">${formatToIDR(total)}</span>
-            </div>
+          <div class="item-row">
+          <span style="width: 30%">${item.name}</span>
+          <span style="width: 15%">x${item.quantity || 1}</span>
+          <span style="width: 35%; text-align: right;">${formatToIDR(total)}</span>
+          </div>
           `;
         }).join('')}
+        </div>
 
         <div class="line">
           <div style="display: flex; justify-content: space-between; font-weight: bold;">

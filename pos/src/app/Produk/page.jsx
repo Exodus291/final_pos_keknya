@@ -43,7 +43,6 @@ const fetchProducts = async () => {
   }
 
     const handleDelete = async (id) => {
-      console.log('Deleting product with ID:', id)
         try {
             await axios.delete(`http://localhost:3001/api/menu/${id}`)
             fetchProducts()

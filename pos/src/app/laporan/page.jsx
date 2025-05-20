@@ -3,8 +3,6 @@
 import React, { useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem } from '@radix-ui/react-dropdown-menu';
-import { Avatar } from '@radix-ui/react-avatar';
-import { Dialog, DialogTrigger, DialogContent } from '@radix-ui/react-dialog';
 import Chart from '../components/chart';
 
 const Laporan = () => {
@@ -32,9 +30,7 @@ const menuCounts = data.reduce((acc, transaction) => {
   });
   return acc;
 }, {});
-          
-          const menuArray = Object.entries(menuCounts).map(([name, jumlah]) => ({ nama: name, jumlah }));
-          setMenuTerlaris(menuArray.sort((a, b) => b.jumlah - a.jumlah).slice(0, 5));
+
         }
       } catch (error) {
         console.error('Error fetching data:', error);

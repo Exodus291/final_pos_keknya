@@ -113,7 +113,6 @@ const InputMenuProduk = () => {
           quantity: Number(item.quantity || 1)
         }))
       };
-      console.log('Sending transaction data:', transaction);
       
       const response = await fetch('http://localhost:3001/api/transactions/pending', {
         method: 'POST',
@@ -130,7 +129,6 @@ const InputMenuProduk = () => {
       }
 
       const responseData = await response.json();
-      console.log('Transaction saved successfully:', responseData);
 
       // Show success animation
       setShowSuccess(true);

@@ -27,7 +27,8 @@ const ProductSearch = ({ onSelect, initialValue = '' }) => {
     try {
       const response = await fetch(`http://localhost:3001/api/menu?search=${encodeURIComponent(search)}`);
       const data = await response.json();
-      setProducts(data);
+      const activeProducts = data.filter(product => product.status === 'active');
+      setProducts(activeProducts);
       setIsOpen(true);
     } catch (error) {
       console.error('Error:', error);
