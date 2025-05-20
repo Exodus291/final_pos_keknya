@@ -23,7 +23,7 @@ const Laporan = () => {
   const fetchData = async () => {
     setRefreshing(true);
     try {
-      const response = await fetch('http://localhost:3001/api/transactions/final');
+      const response = await fetch('https://benyanjir-production.up.railway.app/api/transactions/final');
       const data = await response.json();
 
       if (data && Array.isArray(data)) {

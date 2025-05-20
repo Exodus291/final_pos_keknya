@@ -26,7 +26,7 @@ export default function EditTransactionPage() {
     
     const fetchTransaction = async () => {
       try {
-        const res = await fetch(`http://localhost:3001/api/transactions/${id}`)
+        const res = await fetch(`https://benyanjir-production.up.railway.app/api/transactions/${id}`)
         
         if (!res.ok) {
           throw new Error(`Error ${res.status}: ${res.statusText}`)
@@ -62,7 +62,7 @@ export default function EditTransactionPage() {
   useEffect(() => {
     const fetchMenuItems = async () => {
       try {
-        const res = await fetch('http://localhost:3001/api/menu')
+        const res = await fetch('https://benyanjir-production.up.railway.app/api/menu')
         
         if (!res.ok) {
           throw new Error(`Error ${res.status}: ${res.statusText}`)
@@ -151,7 +151,7 @@ export default function EditTransactionPage() {
     setIsSubmitting(true)
     
     try {
-      const res = await fetch(`http://localhost:3001/api/transactions/${id}`, {
+      const res = await fetch(`https://benyanjir-production.up.railway.app/api/transactions/${id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(formData)

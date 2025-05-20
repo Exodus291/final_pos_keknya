@@ -12,7 +12,7 @@ function App() {
 const fetchProducts = async () => {
   try {
     const response = await axios.get(
-      `http://localhost:3001/api/menu${search ? `?search=${search}` : ''}`
+      `https://benyanjir-production.up.railway.app/api/menu${search ? `?search=${search}` : ''}`
     );
     // Filter menu yang status-nya "active"
     const activeProducts = response.data.filter(product => product.status === 'active');
@@ -25,7 +25,7 @@ const fetchProducts = async () => {
   const handleSubmit = async (e) => {
     e.preventDefault()
     try {
-      await axios.post('http://localhost:3001/api/menu', {
+      await axios.post('https://benyanjir-production.up.railway.app/api/menu', {
         nama: name,
         harga: parseFloat(price)
       }, {
@@ -44,7 +44,7 @@ const fetchProducts = async () => {
 
     const handleDelete = async (id) => {
         try {
-            await axios.delete(`http://localhost:3001/api/menu/${id}`)
+            await axios.delete(`https://benyanjir-production.up.railway.app/api/menu${id}`)
             fetchProducts()
         } catch (error) {
             console.error('Error deleting product:', error.response?.data || error.message)

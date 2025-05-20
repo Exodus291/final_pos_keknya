@@ -25,7 +25,7 @@ const ProductSearch = ({ onSelect, initialValue = '' }) => {
   const searchProducts = async () => {
     setLoading(true);
     try {
-      const response = await fetch(`http://localhost:3001/api/menu?search=${encodeURIComponent(search)}`);
+      const response = await fetch(`https://benyanjir-production.up.railway.app/api/menu?search=${encodeURIComponent(search)}`);
       const data = await response.json();
       const activeProducts = data.filter(product => product.status === 'active');
       setProducts(activeProducts);

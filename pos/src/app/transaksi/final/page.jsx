@@ -13,7 +13,7 @@ export default function FinalTransactionsPage() {
   useEffect(() => {
     const fetchFinalTransactions = async () => {
       try {
-        const response = await fetch('http://localhost:3001/api/transactions/final');
+        const response = await fetch('https://benyanjir-production.up.railway.app/api/transactions/final');
         if (!response.ok) {
           throw new Error('Failed to fetch final transactions');
         }

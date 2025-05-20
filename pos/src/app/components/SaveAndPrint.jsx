@@ -20,7 +20,7 @@ const SaveAndPrint = ({ transaction, className = '', onFinalized, onPrint }) => 
     }
 
     try {
-      const response = await fetch(`http://localhost:3001/api/transactions/${transaction.id}/final`, {
+      const response = await fetch(`https://benyanjir-production.up.railway.app/api/transactions/${transaction.id}/final`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({})

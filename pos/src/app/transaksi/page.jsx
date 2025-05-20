@@ -14,7 +14,7 @@ export default function TransaksiPage() {
 
   const fetchTransactions = async () => {
     try {
-      const response = await fetch('http://localhost:3001/api/transactions/pending');
+      const response = await fetch('https://benyanjir-production.up.railway.app/api/transactions/pending');
       if (!response.ok) throw new Error('Failed to fetch transactions');
       const data = await response.json();
       const sortedData = data.sort((a, b) => new Date(b.date) - new Date(a.date));
@@ -34,7 +34,7 @@ export default function TransaksiPage() {
     if (!confirm('Yakin ingin menghapus transaksi ini?')) return;
     try {
       setDeletingId(id);
-      const response = await fetch(`http://localhost:3001/api/transactions/${id}`, {
+      const response = await fetch(`https://benyanjir-production.up.railway.app/api/transactions/${id}`, {
         method: 'DELETE',
       });
       if (!response.ok) {
