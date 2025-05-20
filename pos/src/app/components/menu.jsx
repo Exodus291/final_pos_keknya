@@ -114,7 +114,7 @@ const InputMenuProduk = () => {
         }))
       };
       
-      const response = await fetch('http://localhost:3001/api/transactions/pending', {
+      const response = await fetch('https://benyanjir-production.up.railway.app/api/transactions/pending', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
