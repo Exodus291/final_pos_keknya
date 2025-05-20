@@ -12,28 +12,22 @@ const Laporan = () => {
   const [menuTerlaris, setMenuTerlaris] = useState([]);
   const [totalPendapatan, setTotalPendapatan] = useState(0);
   const [allTransactions, setAllTransactions] = useState([]);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const fetchData = async () => {
       try {
         const response = await fetch('http://localhost:3001/api/transactions/final');
         const data = await response.json();
-        
+
         if (data && Array.isArray(data)) {
           setAllTransactions(data);
           processData(data, filterPeriode);
-          
-const menuCounts = data.reduce((acc, transaction) => {
-  // Add null coalescing for items array
-  (transaction.items ?? []).forEach(item => {
-    acc[item.name] = (acc[item.name] || 0) + item.quantity;
-  });
-  return acc;
-}, {});
-
         }
       } catch (error) {
         console.error('Error fetching data:', error);
+      } finally {
+        setLoading(false);
       }
     };
 
@@ -46,8 +40,8 @@ const menuCounts = data.reduce((acc, transaction) => {
       const transactionDate = new Date(transaction.date);
       const diffTime = now - transactionDate;
       const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
-      
-      switch(periode) {
+
+      switch (periode) {
         case 'harian': return diffDays <= 1;
         case 'mingguan': return diffDays <= 7;
         case 'bulanan': return diffDays <= 30;
@@ -58,8 +52,8 @@ const menuCounts = data.reduce((acc, transaction) => {
     const groupedData = filtered.reduce((acc, transaction) => {
       const date = new Date(transaction.date);
       let key;
-      
-      switch(periode) {
+
+      switch (periode) {
         case 'harian': key = date.toLocaleDateString(); break;
         case 'mingguan': key = `Week ${getWeekNumber(date)}`; break;
         case 'bulanan': key = date.toLocaleString('default', { month: 'long' }); break;
@@ -89,6 +83,16 @@ const menuCounts = data.reduce((acc, transaction) => {
     return Math.ceil(((d - yearStart) / 86400000 + 1) / 7);
   };
 
+  const formatTime = (isoString) => {
+    const date = new Date(isoString);
+    return date.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' });
+  };
+
+  const formatDate = (isoString) => {
+    const date = new Date(isoString);
+    return date.toLocaleDateString('id-ID');
+  };
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
@@ -102,7 +106,7 @@ const menuCounts = data.reduce((acc, transaction) => {
           </motion.h1>
         </motion.div>
 
-        <motion.div  className="bg-white p-4 rounded-xl shadow-sm">
+        <motion.div className="bg-white p-4 rounded-xl shadow-sm">
           <DropdownMenu>
             <DropdownMenuTrigger className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors">
               Filter Periode: {filterPeriode}
@@ -142,6 +146,36 @@ const menuCounts = data.reduce((acc, transaction) => {
 
         <motion.div className="bg-white p-6 rounded-xl shadow-sm">
           <Chart data={dataPenjualan} />
+        </motion.div>
+
+        <motion.div className="space-y-4">
+          <h2 className="text-xl font-semibold">Detail Transaksi</h2>
+          {loading ? (
+            <p className="text-gray-500">Memuat data...</p>
+          ) : allTransactions.length === 0 ? (
+            <p className="text-gray-500">Tidak ada transaksi.</p>
+          ) : (
+            allTransactions
+              .filter((tx) => {
+                const date = new Date(tx.date);
+                const now = new Date();
+                const diff = Math.floor((now - date) / (1000 * 60 * 60 * 24));
+                if (filterPeriode === 'harian') return diff <= 1;
+                if (filterPeriode === 'mingguan') return diff <= 7;
+                if (filterPeriode === 'bulanan') return diff <= 30;
+                return true;
+              })
+              .map((tx, index) => (
+                <div key={index} className="bg-white border border-gray-200 rounded-xl p-4 shadow-sm">
+                  <p className="text-sm text-gray-500">Tanggal: {formatDate(tx.date)}</p>
+                  <p className="font-semibold">Customer: {tx.customerName || '-'}</p>
+                  <p className="text-sm">Jam: {formatTime(tx.date)}</p>
+                  <p className="text-sm font-medium text-green-600 mt-1">
+                    Total: Rp {parseInt(tx.total).toLocaleString()}
+                  </p>
+                </div>
+              ))
+          )}
         </motion.div>
       </div>
     </motion.div>
