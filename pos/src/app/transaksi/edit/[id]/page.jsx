@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Trash2, X, Save, ShoppingBag } from 'lucide-react'
-import SearchProduk from '../../components/cariProduk' // Import SearchProduk component
+import SearchProduk from '../../../components/cariProduk' // Import SearchProduk component
 
 export default function EditTransactionPage() {
   const { id } = useParams()
