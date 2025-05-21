@@ -44,7 +44,7 @@ const fetchProducts = async () => {
 
     const handleDelete = async (id) => {
         try {
-            await axios.delete(`https://benyanjir-production.up.railway.app/api/menu${id}`)
+            await axios.delete(`https://benyanjir-production.up.railway.app/api/menu/${id}`)
             fetchProducts()
         } catch (error) {
             console.error('Error deleting product:', error.response?.data || error.message)
