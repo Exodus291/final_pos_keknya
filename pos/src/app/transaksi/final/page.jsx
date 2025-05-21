@@ -239,9 +239,9 @@ function getPrintContent(trx) {
   return `
     <div style="width: 58mm; padding: 5mm; font-family: monospace; font-size: 12px;">
       <div style="text-align: center; margin-bottom: 10px;">
-        <h2 style="margin: 0;">WARUNG SEBLAK</h2>
-        <p style="margin: 5px 0;">Jl. Example Street No. 123</p>
-        <p style="margin: 5px 0;">Tel: (123) 456-7890</p>
+          <h2 style="margin: 0;">SEBLAK ENJEL</h2>
+          <p style="margin: 5px 0;">Jl. Roda Pembangunan Kp.Blok Rawa Rt.08/06</p>
+          <p style="margin: 5px 0;">Tel: 0821-6174-4944</p>
       </div>
       
       <div style="border-top: 1px dashed #000; border-bottom: 1px dashed #000; padding: 5px 0; margin: 10px 0;">
